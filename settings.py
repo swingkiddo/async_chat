@@ -1,0 +1,3 @@
+HOSTNAME = 'localhost'
+PORT = 10110
+MAX_CONNECTIONS = 10

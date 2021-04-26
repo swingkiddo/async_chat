@@ -1,5 +1,6 @@
 from asyncio import AbstractEventLoop
 import time
+import pickle
 
 
 async def get_user_credentials(event_loop: AbstractEventLoop):
@@ -33,3 +34,10 @@ def get_current_time():
     minutes = _time[4] if len(f"{_time[4]}") == 2 else f"0{_time[4]}"
     current_time = f"{hours}:{minutes}"
     return current_time
+
+
+def create_response(**kwargs):
+    response = {}
+    for key, value in kwargs.items():
+        response[key] = value
+    return pickle.dumps(response)

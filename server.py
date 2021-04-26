@@ -4,7 +4,7 @@ import asyncio
 
 from settings import HOSTNAME, PORT, MAX_CONNECTIONS
 from database import Database
-from utils import get_current_time
+from utils import get_current_time, create_response
 
 
 class ChatServer:
@@ -17,7 +17,6 @@ class ChatServer:
         self.database = Database()
         self.log = self.database.get_log()
         self.main_loop = asyncio.new_event_loop()
-        print(self.log)
 
     def get_socket(self):
         server_socket = socket.socket()
@@ -30,12 +29,6 @@ class ChatServer:
     def write_to_log(self, data):
         with open(self.messages, "a") as log:
             log.write(data + '\n')
-
-    def create_response(self, **kwargs):
-        response = {}
-        for key, value in kwargs.items():
-            response[key] = value
-        return pickle.dumps(response)
 
     async def handling_new_messages(self, username, message):
         self.database.create_message(username, message)
@@ -54,12 +47,12 @@ class ChatServer:
             self.database.register_user(username, password)
 
             message = "You successfully registered. You can login to  chat"
-            response = self.create_response(message=message)
+            response = create_response(message=message)
             _client.send(response)
 
         except Exception as _err:
             print(f"{_err}\n")
-            response = self.create_response(message="Username is already taken. Try another one")
+            response = create_response(message="Username is already taken. Try another one")
             _client.send(response)
 
     async def authenticate_user(self, _client, data):
@@ -72,24 +65,23 @@ class ChatServer:
             _id = self.database.validate_user_data(username, password)
 
             if not _id:
-                response = self.create_response(status="Error", message="Wrong username or password")
+                response = create_response(status="Error", message="Wrong username or password")
                 await self.main_loop.sock_sendall(_client, response)
                 return
 
-            response = self.create_response(
+            response = create_response(
                     status="OK",
                     message=f"You successfully joined chat, welcome, {username}!",
                     id=_id,
                     username=username,
                     log=self.log
             )
-            print(response)
             await self.main_loop.sock_sendall(_client, response)
             self.users.append(_client)
 
         except Exception as _err:
             print(f"{_err}\n")
-            response = self.create_response(status="Error", message=_err)
+            response = create_response(status="Error", message=_err)
             await self.main_loop.sock_sendall(_client, response)
 
     async def accept_connection(self):
